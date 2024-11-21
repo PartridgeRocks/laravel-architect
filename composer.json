@@ -1,10 +1,13 @@
 {
-    "name": "partridgerocks/laravel-architect",
-    "description": "Everything you need to know about your laravel app",
+    "name": "partridge-rocks/laravel-architect",
+    "description": "Everything you need to know about your Laravel app",
     "keywords": [
         "partridge-rocks",
         "laravel",
-        "laravel-architect"
+        "laravel-architect",
+        "static analysis",
+        "code quality",
+        "ai"
     ],
     "homepage": "https://github.com/partridgerocks/laravel-architect",
     "license": "MIT",
@@ -17,8 +20,10 @@
     ],
     "require": {
         "php": "^8.2",
+        "illuminate/contracts": "^10.0||^11.0",
+        "jordanpartridge/maestro": "dev-main",
         "spatie/laravel-package-tools": "^1.16",
-        "illuminate/contracts": "^10.0||^11.0"
+        "vlucas/phpdotenv": "^5.6"
     },
     "require-dev": {
         "laravel/pint": "^1.14",
@@ -34,8 +39,7 @@
     },
     "autoload": {
         "psr-4": {
-            "PartridgeRocks\\LaravelArchitect\\": "src/",
-            "PartridgeRocks\\LaravelArchitect\\Database\\Factories\\": "database/factories/"
+            "PartridgeRocks\\LaravelArchitect\\": "src/"
         }
     },
     "autoload-dev": {
@@ -80,5 +84,11 @@
         }
     },
     "minimum-stability": "dev",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "git@github.com:jordanpartridge/maestro.git"
+        }
+    ]
 }
