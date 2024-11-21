@@ -1,12 +1,12 @@
 <?php
 
-namespace VendorName\Skeleton\Commands;
+namespace PartridgeRocks\LaravelArchitect\Commands;
 
 use Illuminate\Console\Command;
 
-class SkeletonCommand extends Command
+class LaravelArchitectCommand extends Command
 {
-    public $signature = 'skeleton';
+    public $signature = 'laravel-architect';
 
     public $description = 'My command';
 
