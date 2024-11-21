@@ -2,9 +2,9 @@
 
 namespace PartridgeRocks\LaravelArchitect;
 
+use PartridgeRocks\LaravelArchitect\Commands\LaravelArchitectCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use PartridgeRocks\LaravelArchitect\Commands\LaravelArchitectCommand;
 
 class LaravelArchitectServiceProvider extends PackageServiceProvider
 {
