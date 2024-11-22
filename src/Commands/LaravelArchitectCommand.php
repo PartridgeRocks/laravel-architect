@@ -2,10 +2,15 @@
 
 namespace PartridgeRocks\LaravelArchitect\Commands;
 
+use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Dotenv\Dotenv;
+use PartridgeRocks\LaravelArchitect\LaravelArchitect;
+use RuntimeException;
+use SplFileObject;
+use Symfony\Component\Finder\Finder;
 
 class LaravelArchitectCommand extends Command
 {
@@ -16,7 +21,7 @@ class LaravelArchitectCommand extends Command
 
     public $description = 'Analyze and tell the story of your Laravel application';
 
-    protected $hiddenEnvKeys = [
+    protected array $hiddenEnvKeys = [
         'APP_KEY',
         'DB_PASSWORD',
         'AWS_ACCESS_KEY_ID',
@@ -29,8 +34,13 @@ class LaravelArchitectCommand extends Command
         'RESEND_KEY',
         'LOG_SLACK_WEBHOOK_URL',
         'SLACK_ALERT_WEBHOOK_URL',
-        'CARD_API_KEY'
+        'CARD_API_KEY',
     ];
+
+    public function __construct(private readonly LaravelArchitect $architect)
+    {
+        parent::__construct();
+    }
 
     public function handle(): int
     {
@@ -58,7 +68,7 @@ class LaravelArchitectCommand extends Command
 
             $this->newLine();
             $this->info('✨ Analysis complete!');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error("An error occurred during analysis: " . $e->getMessage());
             return self::FAILURE;
         }
@@ -72,7 +82,7 @@ class LaravelArchitectCommand extends Command
             if (File::exists($path . '/.env')) {
                 return Dotenv::createImmutable($path)->load();
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->warn("Warning: Could not parse .env file: " . $e->getMessage());
         }
         return [];
@@ -95,14 +105,14 @@ class LaravelArchitectCommand extends Command
         $composer = json_decode(File::get($path . '/composer.json'), true);
 
         $details = [
-            'Project Name' => $env['APP_NAME'] ?? $composer['name'] ?? 'Unknown',
-            'Description' => $composer['description'] ?? 'No description provided',
-            'Environment' => $env['APP_ENV'] ?? 'Not specified',
-            'Debug Mode' => ($env['APP_DEBUG'] ?? 'false') === 'true' ? 'Enabled ⚠️' : 'Disabled ✅',
+            'Project Name'     => $env['APP_NAME'] ?? $composer['name'] ?? 'Unknown',
+            'Description'      => $composer['description'] ?? 'No description provided',
+            'Environment'      => $env['APP_ENV'] ?? 'Not specified',
+            'Debug Mode'       => ($env['APP_DEBUG'] ?? 'false') === 'true' ? 'Enabled ⚠️' : 'Disabled ✅',
             'Maintenance Mode' => $this->isInMaintenanceMode($path) ? 'Enabled ⚠️' : 'Disabled',
-            'Project Size' => $this->getFormattedSize($path),
-            'Lines of Code' => number_format($this->getKloc($path)) . ' KLOC',
-            'Activity Level' => $this->getActivityScore($path)
+            'Project Size'     => $this->getFormattedSize($path),
+            'Lines of Code'    => number_format($this->getKloc($path)) . ' KLOC',
+            'Activity Level'   => $this->getActivityScore($path),
         ];
 
         foreach ($details as $key => $value) {
@@ -123,18 +133,18 @@ class LaravelArchitectCommand extends Command
         $this->components->info('Chapter 2: Application Structure 🏗️');
 
         $stats = [
-            'Controllers' => $this->getFileCount($path . '/app/Http/Controllers'),
-            'Models' => $this->getFileCount($path . '/app/Models'),
-            'Migrations' => $this->getFileCount($path . '/database/migrations'),
+            'Controllers'  => $this->getFileCount($path . '/app/Http/Controllers'),
+            'Models'       => $this->getFileCount($path . '/app/Models'),
+            'Migrations'   => $this->getFileCount($path . '/database/migrations'),
             'Routes Files' => count(File::files($path . '/routes')),
-            'Views' => $this->getFileCount($path . '/resources/views'),
-            'Tests' => $this->getFileCount($path . '/tests'),
+            'Views'        => $this->getFileCount($path . '/resources/views'),
+            'Tests'        => $this->getFileCount($path . '/tests'),
             'Config Files' => $this->getFileCount($path . '/config'),
-            'Commands' => $this->getFileCount($path . '/app/Console/Commands'),
+            'Commands'     => $this->getFileCount($path . '/app/Console/Commands'),
         ];
 
         foreach ($stats as $type => $count) {
-            $this->components->twoColumnDetail($type, (string) $count);
+            $this->components->twoColumnDetail($type, (string)$count);
         }
 
         // Identify patterns
@@ -170,13 +180,11 @@ class LaravelArchitectCommand extends Command
         $this->newLine();
         $this->components->info('Key Packages:');
         collect($composer['require'] ?? [])
-            ->filter(fn ($version, $package) =>
-                !str_starts_with($package, 'php') &&
+            ->filter(fn($version, $package) => !str_starts_with($package, 'php') &&
                 !str_starts_with($package, 'laravel/framework')
             )
             ->take(10)
-            ->each(fn ($version, $package) =>
-            $this->components->bulletList(["$package: $version"])
+            ->each(fn($version, $package) => $this->components->bulletList(["$package: $version"])
             );
     }
 
@@ -186,11 +194,11 @@ class LaravelArchitectCommand extends Command
         $this->components->info('Chapter 4: Testing and Quality 🎯');
 
         $testStats = [
-            'Total Tests' => $this->countTests($path),
-            'Feature Tests' => $this->countTestsInDirectory($path . '/tests/Feature'),
-            'Unit Tests' => $this->countTestsInDirectory($path . '/tests/Unit'),
-            'Test Suite' => $this->identifyTestFramework($path),
-            'Code Style' => $this->identifyCodeStyle($path),
+            'Total Tests'     => $this->countTests($path),
+            'Feature Tests'   => $this->architect->countTestsInDirectory($path . '/tests/Feature'),
+            'Unit Tests'      => $this->architect->countTestsInDirectory($path . '/tests/Unit'),
+            'Test Suite'      => $this->identifyTestFramework($path),
+            'Code Style'      => $this->identifyCodeStyle($path),
             'Static Analysis' => $this->hasStaticAnalysis($path) ? 'Configured ✅' : 'Not configured',
         ];
 
@@ -205,13 +213,13 @@ class LaravelArchitectCommand extends Command
         $this->components->info('Chapter 5: Infrastructure Setup 🌐');
 
         $infrastructure = [
-            'Queue System' => $env['QUEUE_CONNECTION'] ?? 'sync',
-            'Cache Driver' => $env['CACHE_STORE'] ?? 'file',
+            'Queue System'   => $env['QUEUE_CONNECTION'] ?? 'sync',
+            'Cache Driver'   => $env['CACHE_STORE'] ?? 'file',
             'Session Driver' => $env['SESSION_DRIVER'] ?? 'file',
-            'Database' => $env['DB_CONNECTION'] ?? 'mysql',
-            'Mail Driver' => $env['MAIL_MAILER'] ?? 'smtp',
-            'Filesystem' => $env['FILESYSTEM_DISK'] ?? 'local',
-            'Broadcasting' => $env['BROADCAST_DRIVER'] ?? 'log'
+            'Database'       => $env['DB_CONNECTION'] ?? 'mysql',
+            'Mail Driver'    => $env['MAIL_MAILER'] ?? 'smtp',
+            'Filesystem'     => $env['FILESYSTEM_DISK'] ?? 'local',
+            'Broadcasting'   => $env['BROADCAST_DRIVER'] ?? 'log',
         ];
 
         foreach ($infrastructure as $key => $value) {
@@ -229,15 +237,15 @@ class LaravelArchitectCommand extends Command
         $patterns = [];
 
         $directories = [
-            'Services' => 'Service Layer',
-            'Repositories' => 'Repository Pattern',
-            'Actions' => 'Action Pattern',
+            'Services'            => 'Service Layer',
+            'Repositories'        => 'Repository Pattern',
+            'Actions'             => 'Action Pattern',
             'DataTransferObjects' => 'DTO Pattern',
-            'Presenters' => 'Presenter Pattern',
-            'Policies' => 'Policy Pattern',
-            'Events' => 'Event-Driven Architecture',
-            'Jobs' => 'Queue-based Processing',
-            'ViewModels' => 'View Model Pattern'
+            'Presenters'          => 'Presenter Pattern',
+            'Policies'            => 'Policy Pattern',
+            'Events'              => 'Event-Driven Architecture',
+            'Jobs'                => 'Queue-based Processing',
+            'ViewModels'          => 'View Model Pattern',
         ];
 
         foreach ($directories as $dir => $pattern) {
@@ -296,12 +304,12 @@ class LaravelArchitectCommand extends Command
     {
         try {
             return collect(File::allFiles($path))
-                ->sortByDesc(fn ($file) => $file->getMTime())
+                ->sortByDesc(fn($file) => $file->getMTime())
                 ->take($limit)
-                ->map(fn ($file) => $file->getRelativePathname() .
+                ->map(fn($file) => $file->getRelativePathname() .
                     ' (modified ' . date('Y-m-d', $file->getMTime()) . ')')
                 ->toArray();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return [];
         }
     }
@@ -317,8 +325,8 @@ class LaravelArchitectCommand extends Command
         $bytes = $this->getDirSize($path);
         $units = ['B', 'KB', 'MB', 'GB'];
         $bytes = max($bytes, 0);
-        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
-        $pow = min($pow, count($units) - 1);
+        $pow   = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow   = min($pow, count($units) - 1);
         $bytes /= pow(1024, $pow);
 
         return round($bytes, 2) . ' ' . $units[$pow];
@@ -333,22 +341,44 @@ class LaravelArchitectCommand extends Command
         return $size;
     }
 
-    private function getKloc(string $path): int
+    private function getKloc(string $path): float
     {
-        $kloc = 0;
-        foreach (File::allFiles($path) as $file) {
-            if (pathinfo($file, PATHINFO_EXTENSION) === 'php') {
-                $kloc += count(file($file->getPathname()));
+        $finder = new Finder();
+        $kloc   = 0;
+
+        try {
+            $finder->files()
+                ->in($path)
+                ->name('*.php')
+                ->notPath('vendor')    // Exclude vendor directory
+                ->notPath('node_modules');  // Exclude node_modules if present
+
+            foreach ($finder as $file) {
+                $fileObj = new SplFileObject($file->getRealPath());
+                $fileObj->setFlags(SplFileObject::DROP_NEW_LINE | SplFileObject::SKIP_EMPTY);
+
+                $lineCount = 0;
+                while (!$fileObj->eof()) {
+                    $line = $fileObj->fgets();
+                    // Skip comment-only lines
+                    if (!preg_match('/^\s*(\/\/|\/\*|\*|\*\/|#)\s*$/', $line)) {
+                        $lineCount++;
+                    }
+                }
+                $kloc += $lineCount;
             }
+
+            return round($kloc / 1000, 2);
+        } catch (Exception $e) {
+            throw new RuntimeException("Error analyzing directory: " . $e->getMessage());
         }
-        return $kloc / 1000;
     }
 
     private function getActivityScore(string $path): string
     {
         $recentlyModified = count(array_filter(
             File::allFiles($path),
-            fn ($file) => $file->getMTime() > strtotime('-7 days')
+            fn($file) => $file->getMTime() > strtotime('-7 days')
         ));
 
         if ($recentlyModified > 100) return 'Very Active 🔥';
@@ -371,38 +401,11 @@ class LaravelArchitectCommand extends Command
 
     private function countTests(string $path): int
     {
-        return $this->countTestsInDirectory($path . '/tests');
+        return $this->architect->countTestsInDirectory($path . '/tests');
     }
 
-    private function countTestsInDirectory(string $directory): int
-    {
-        if (!File::exists($directory)) {
-            return 0;
-        }
 
-        $count = 0;
-        foreach (File::allFiles($directory) as $file) {
-            if (Str::endsWith($file->getFilename(), ['Test.php', '.spec.php'])) {
-                $count++;
-            }
-        }
-        return $count;
-    }
 
-    private function identifyTestFramework(string $path): string
-    {
-        $composer = json_decode(File::get($path . '/composer.json'), true);
-
-        if (isset($composer['require-dev']['pestphp/pest'])) {
-            return 'Pest 🐝';
-        }
-
-        if (isset($composer['require-dev']['phpunit/phpunit'])) {
-            return 'PHPUnit 🎯';
-        }
-
-        return 'Not identified';
-    }
 
     private function identifyCodeStyle(string $path): string
     {
@@ -436,6 +439,7 @@ class LaravelArchitectCommand extends Command
     private function printGitInfo(string $path): void
     {
         try {
+            $path = escapeshellarg($path);
             // Get current branch
             $branch = trim(shell_exec('cd ' . $path . ' && git branch --show-current'));
             $this->components->twoColumnDetail('Current Branch', $branch);
@@ -461,7 +465,7 @@ class LaravelArchitectCommand extends Command
                 empty($status) ? 'Clean ✨' : 'Has Changes ⚠️'
             );
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->warn('Could not fetch complete Git information');
         }
     }
@@ -479,7 +483,7 @@ class LaravelArchitectCommand extends Command
             $strengths[] = 'Static analysis is configured, showing commitment to code quality';
         }
 
-        if ($this->identifyTestFramework(getcwd()) !== 'Not identified') {
+        if ($this->architect->identifyTestFramework(getcwd()) !== 'Not identified') {
             $strengths[] = 'Testing framework is in place';
         }
 
