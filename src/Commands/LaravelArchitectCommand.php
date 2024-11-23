@@ -2,18 +2,18 @@
 
 namespace PartridgeRocks\LaravelArchitect\Commands;
 
+use Dotenv\Dotenv;
 use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
-use Dotenv\Dotenv;
 use PartridgeRocks\LaravelArchitect\LaravelArchitect;
 use PartridgeRocks\LaravelArchitect\Services\ProjectMetaDataService;
 use RuntimeException;
 use SplFileObject;
 use Symfony\Component\Finder\Finder;
 
-use function Laravel\Prompts\{info, select, text};
+use function Laravel\Prompts\info;
 
 class LaravelArchitectCommand extends Command
 {
@@ -42,9 +42,8 @@ class LaravelArchitectCommand extends Command
 
     public function __construct(
         private readonly LaravelArchitect $architect,
-        ProjectMetaDataService            $projectMetaDataService,
-    )
-    {
+        ProjectMetaDataService $projectMetaDataService,
+    ) {
         parent::__construct();
     }
 
@@ -52,14 +51,15 @@ class LaravelArchitectCommand extends Command
     {
         $path = $this->argument('path') ?? getcwd();
 
-        info("Analyzing Laravel project at: $path");
-        if (!$this->isLaravelProject($path)) {
+        info("Analyzing Laravel project at: {$path}");
+        if (! $this->isLaravelProject($path)) {
             $this->error("❌ This doesn't seem to be a Laravel project!");
-                return self::FAILURE;
+
+            return self::FAILURE;
         }
 
         $this->newLine();
-        $this->title("📖 The Story of Your Laravel Application");
+        $this->title('📖 The Story of Your Laravel Application');
         $this->newLine();
 
         // Load environment variables safely
@@ -76,7 +76,8 @@ class LaravelArchitectCommand extends Command
             $this->newLine();
             $this->info('✨ Analysis complete!');
         } catch (Exception $e) {
-            $this->error("An error occurred during analysis: " . $e->getMessage());
+            $this->error('An error occurred during analysis: ' . $e->getMessage());
+
             return self::FAILURE;
         }
 
@@ -90,8 +91,9 @@ class LaravelArchitectCommand extends Command
                 return Dotenv::createImmutable($path)->load();
             }
         } catch (Exception $e) {
-            $this->warn("Warning: Could not parse .env file: " . $e->getMessage());
+            $this->warn('Warning: Could not parse .env file: ' . $e->getMessage());
         }
+
         return [];
     }
 
@@ -112,14 +114,14 @@ class LaravelArchitectCommand extends Command
         $composer = json_decode(File::get($path . '/composer.json'), true);
 
         $details = [
-            'Project Name'     => $env['APP_NAME'] ?? $composer['name'] ?? 'Unknown',
-            'Description'      => $composer['description'] ?? 'No description provided',
-            'Environment'      => $env['APP_ENV'] ?? 'Not specified',
-            'Debug Mode'       => ($env['APP_DEBUG'] ?? 'false') === 'true' ? 'Enabled ⚠️' : 'Disabled ✅',
+            'Project Name' => $env['APP_NAME'] ?? $composer['name'] ?? 'Unknown',
+            'Description' => $composer['description'] ?? 'No description provided',
+            'Environment' => $env['APP_ENV'] ?? 'Not specified',
+            'Debug Mode' => ($env['APP_DEBUG'] ?? 'false') === 'true' ? 'Enabled ⚠️' : 'Disabled ✅',
             'Maintenance Mode' => $this->isInMaintenanceMode($path) ? 'Enabled ⚠️' : 'Disabled',
-            'Project Size'     => $this->getFormattedSize($path),
-            'Lines of Code'    => number_format($this->getKloc($path)) . ' KLOC',
-            'Activity Level'   => $this->getActivityScore($path),
+            'Project Size' => $this->getFormattedSize($path),
+            'Lines of Code' => number_format($this->getKloc($path)) . ' KLOC',
+            'Activity Level' => $this->getActivityScore($path),
         ];
 
         foreach ($details as $key => $value) {
@@ -140,18 +142,18 @@ class LaravelArchitectCommand extends Command
         $this->components->info('Chapter 2: Application Structure 🏗️');
 
         $stats = [
-            'Controllers'  => $this->getFileCount($path . '/app/Http/Controllers'),
-            'Models'       => $this->getFileCount($path . '/app/Models'),
-            'Migrations'   => $this->getFileCount($path . '/database/migrations'),
+            'Controllers' => $this->getFileCount($path . '/app/Http/Controllers'),
+            'Models' => $this->getFileCount($path . '/app/Models'),
+            'Migrations' => $this->getFileCount($path . '/database/migrations'),
             'Routes Files' => count(File::files($path . '/routes')),
-            'Views'        => $this->getFileCount($path . '/resources/views'),
-            'Tests'        => $this->getFileCount($path . '/tests'),
+            'Views' => $this->getFileCount($path . '/resources/views'),
+            'Tests' => $this->getFileCount($path . '/tests'),
             'Config Files' => $this->getFileCount($path . '/config'),
-            'Commands'     => $this->getFileCount($path . '/app/Console/Commands'),
+            'Commands' => $this->getFileCount($path . '/app/Console/Commands'),
         ];
 
         foreach ($stats as $type => $count) {
-            $this->components->twoColumnDetail($type, (string)$count);
+            $this->components->twoColumnDetail($type, (string) $count);
         }
 
         // Identify patterns
@@ -187,11 +189,11 @@ class LaravelArchitectCommand extends Command
         $this->newLine();
         $this->components->info('Key Packages:');
         collect($composer['require'] ?? [])
-            ->filter(fn($version, $package) => !str_starts_with($package, 'php') &&
-                !str_starts_with($package, 'laravel/framework')
+            ->filter(fn ($version, $package) => ! str_starts_with($package, 'php') &&
+                ! str_starts_with($package, 'laravel/framework')
             )
             ->take(10)
-            ->each(fn($version, $package) => $this->components->bulletList(["$package: $version"])
+            ->each(fn ($version, $package) => $this->components->bulletList(["{$package}: {$version}"])
             );
     }
 
@@ -201,11 +203,11 @@ class LaravelArchitectCommand extends Command
         $this->components->info('Chapter 4: Testing and Quality 🎯');
 
         $testStats = [
-            'Total Tests'     => $this->countTests($path),
-            'Feature Tests'   => $this->architect->countTestsInDirectory($path . '/tests/Feature'),
-            'Unit Tests'      => $this->architect->countTestsInDirectory($path . '/tests/Unit'),
-            'Test Suite'      => $this->architect->identifyTestFramework($path),
-            'Code Style'      => $this->identifyCodeStyle($path),
+            'Total Tests' => $this->countTests($path),
+            'Feature Tests' => $this->architect->countTestsInDirectory($path . '/tests/Feature'),
+            'Unit Tests' => $this->architect->countTestsInDirectory($path . '/tests/Unit'),
+            'Test Suite' => $this->architect->identifyTestFramework($path),
+            'Code Style' => $this->identifyCodeStyle($path),
             'Static Analysis' => $this->hasStaticAnalysis($path) ? 'Configured ✅' : 'Not configured',
         ];
 
@@ -220,13 +222,13 @@ class LaravelArchitectCommand extends Command
         $this->components->info('Chapter 5: Infrastructure Setup 🌐');
 
         $infrastructure = [
-            'Queue System'   => $env['QUEUE_CONNECTION'] ?? 'sync',
-            'Cache Driver'   => $env['CACHE_STORE'] ?? 'file',
+            'Queue System' => $env['QUEUE_CONNECTION'] ?? 'sync',
+            'Cache Driver' => $env['CACHE_STORE'] ?? 'file',
             'Session Driver' => $env['SESSION_DRIVER'] ?? 'file',
-            'Database'       => $env['DB_CONNECTION'] ?? 'mysql',
-            'Mail Driver'    => $env['MAIL_MAILER'] ?? 'smtp',
-            'Filesystem'     => $env['FILESYSTEM_DISK'] ?? 'local',
-            'Broadcasting'   => $env['BROADCAST_DRIVER'] ?? 'log',
+            'Database' => $env['DB_CONNECTION'] ?? 'mysql',
+            'Mail Driver' => $env['MAIL_MAILER'] ?? 'smtp',
+            'Filesystem' => $env['FILESYSTEM_DISK'] ?? 'local',
+            'Broadcasting' => $env['BROADCAST_DRIVER'] ?? 'log',
         ];
 
         foreach ($infrastructure as $key => $value) {
@@ -244,24 +246,24 @@ class LaravelArchitectCommand extends Command
         $patterns = [];
 
         $directories = [
-            'Services'            => 'Service Layer',
-            'Repositories'        => 'Repository Pattern',
-            'Actions'             => 'Action Pattern',
+            'Services' => 'Service Layer',
+            'Repositories' => 'Repository Pattern',
+            'Actions' => 'Action Pattern',
             'DataTransferObjects' => 'DTO Pattern',
-            'Presenters'          => 'Presenter Pattern',
-            'Policies'            => 'Policy Pattern',
-            'Events'              => 'Event-Driven Architecture',
-            'Jobs'                => 'Queue-based Processing',
-            'ViewModels'          => 'View Model Pattern',
+            'Presenters' => 'Presenter Pattern',
+            'Policies' => 'Policy Pattern',
+            'Events' => 'Event-Driven Architecture',
+            'Jobs' => 'Queue-based Processing',
+            'ViewModels' => 'View Model Pattern',
         ];
 
         foreach ($directories as $dir => $pattern) {
             if (File::exists($path . '/app/' . $dir)) {
-                $patterns[] = "$pattern detected";
+                $patterns[] = "{$pattern} detected";
             }
         }
 
-        if (!empty($patterns)) {
+        if (! empty($patterns)) {
             $this->components->bulletList($patterns);
         } else {
             $this->line('No specific patterns detected');
@@ -273,26 +275,26 @@ class LaravelArchitectCommand extends Command
         $services = [];
 
         // AWS
-        if (!empty($env['AWS_ACCESS_KEY_ID'])) {
+        if (! empty($env['AWS_ACCESS_KEY_ID'])) {
             $services[] = 'AWS Integration';
         }
 
         // Redis
-        if (!empty($env['REDIS_HOST'])) {
+        if (! empty($env['REDIS_HOST'])) {
             $services[] = 'Redis';
         }
 
         // Slack
-        if (!empty($env['SLACK_BOT_USER_OAUTH_TOKEN'])) {
+        if (! empty($env['SLACK_BOT_USER_OAUTH_TOKEN'])) {
             $services[] = 'Slack Integration';
         }
 
         // Other services you detected
-        if (!empty($env['GOOGLE_MAP_API_KEY'])) {
+        if (! empty($env['GOOGLE_MAP_API_KEY'])) {
             $services[] = 'Google Maps';
         }
 
-        if (!empty($services)) {
+        if (! empty($services)) {
             $this->components->bulletList($services);
         } else {
             $this->line('No third-party services detected');
@@ -301,9 +303,10 @@ class LaravelArchitectCommand extends Command
 
     private function getFileCount(string $directory): int
     {
-        if (!File::exists($directory)) {
+        if (! File::exists($directory)) {
             return 0;
         }
+
         return count(File::allFiles($directory));
     }
 
@@ -311,9 +314,9 @@ class LaravelArchitectCommand extends Command
     {
         try {
             return collect(File::allFiles($path))
-                ->sortByDesc(fn($file) => $file->getMTime())
+                ->sortByDesc(fn ($file) => $file->getMTime())
                 ->take($limit)
-                ->map(fn($file) => $file->getRelativePathname() .
+                ->map(fn ($file) => $file->getRelativePathname() .
                     ' (modified ' . date('Y-m-d', $file->getMTime()) . ')')
                 ->toArray();
         } catch (Exception $e) {
@@ -332,8 +335,8 @@ class LaravelArchitectCommand extends Command
         $bytes = $this->getDirSize($path);
         $units = ['B', 'KB', 'MB', 'GB'];
         $bytes = max($bytes, 0);
-        $pow   = floor(($bytes ? log($bytes) : 0) / log(1024));
-        $pow   = min($pow, count($units) - 1);
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow = min($pow, count($units) - 1);
         $bytes /= pow(1024, $pow);
 
         return round($bytes, 2) . ' ' . $units[$pow];
@@ -345,13 +348,14 @@ class LaravelArchitectCommand extends Command
         foreach (File::allFiles($path) as $file) {
             $size += $file->getSize();
         }
+
         return $size;
     }
 
     private function getKloc(string $path): float
     {
-        $finder = new Finder();
-        $kloc   = 0;
+        $finder = new Finder;
+        $kloc = 0;
 
         try {
             $finder->files()
@@ -365,10 +369,10 @@ class LaravelArchitectCommand extends Command
                 $fileObj->setFlags(SplFileObject::DROP_NEW_LINE | SplFileObject::SKIP_EMPTY);
 
                 $lineCount = 0;
-                while (!$fileObj->eof()) {
+                while (! $fileObj->eof()) {
                     $line = $fileObj->fgets();
                     // Skip comment-only lines
-                    if (!preg_match('/^\s*(\/\/|\/\*|\*|\*\/|#)\s*$/', $line)) {
+                    if (! preg_match('/^\s*(\/\/|\/\*|\*|\*\/|#)\s*$/', $line)) {
                         $lineCount++;
                     }
                 }
@@ -377,7 +381,7 @@ class LaravelArchitectCommand extends Command
 
             return round($kloc / 1000, 2);
         } catch (Exception $e) {
-            throw new RuntimeException("Error analyzing directory: " . $e->getMessage());
+            throw new RuntimeException('Error analyzing directory: ' . $e->getMessage());
         }
     }
 
@@ -385,12 +389,19 @@ class LaravelArchitectCommand extends Command
     {
         $recentlyModified = count(array_filter(
             File::allFiles($path),
-            fn($file) => $file->getMTime() > strtotime('-7 days')
+            fn ($file) => $file->getMTime() > strtotime('-7 days')
         ));
 
-        if ($recentlyModified > 100) return 'Very Active 🔥';
-        if ($recentlyModified > 50) return 'Active 👍';
-        if ($recentlyModified > 10) return 'Moderately Active 👌';
+        if ($recentlyModified > 100) {
+            return 'Very Active 🔥';
+        }
+        if ($recentlyModified > 50) {
+            return 'Active 👍';
+        }
+        if ($recentlyModified > 10) {
+            return 'Moderately Active 👌';
+        }
+
         return 'Low Activity 😴';
     }
 
@@ -411,7 +422,6 @@ class LaravelArchitectCommand extends Command
         return $this->architect->countTestsInDirectory($path . '/tests');
     }
 
-
     private function identifyCodeStyle(string $path): string
     {
         $composer = json_decode(File::get($path . '/composer.json'), true);
@@ -427,9 +437,8 @@ class LaravelArchitectCommand extends Command
             $styles[] = 'PHP_CodeSniffer';
         }
 
-        return !empty($styles) ? implode(', ', $styles) : 'Not configured';
+        return ! empty($styles) ? implode(', ', $styles) : 'Not configured';
     }
-
 
     private function hasStaticAnalysis(string $path): bool
     {
@@ -457,7 +466,7 @@ class LaravelArchitectCommand extends Command
             $contributors = count(array_filter(array_unique(explode("\n",
                 shell_exec('cd ' . $path . ' && git log --format="%aE" | sort -u')
             ))));
-            $this->components->twoColumnDetail('Contributors', (string)$contributors);
+            $this->components->twoColumnDetail('Contributors', (string) $contributors);
 
             // Get total commits
             $totalCommits = trim(shell_exec('cd ' . $path . ' && git rev-list --count HEAD'));
@@ -480,7 +489,7 @@ class LaravelArchitectCommand extends Command
         $this->newLine(2);
         $this->components->info('Executive Summary 📊');
 
-        $strengths   = [];
+        $strengths = [];
         $suggestions = [];
 
         // Add strengths based on findings
@@ -497,7 +506,7 @@ class LaravelArchitectCommand extends Command
         }
 
         // Add suggestions based on findings
-        if (!$this->hasStaticAnalysis(getcwd())) {
+        if (! $this->hasStaticAnalysis(getcwd())) {
             $suggestions[] = 'Consider adding static analysis with PHPStan/Larastan';
         }
 
@@ -509,13 +518,13 @@ class LaravelArchitectCommand extends Command
             $suggestions[] = 'Debug mode is enabled, remember to disable in production';
         }
 
-        if (!empty($strengths)) {
+        if (! empty($strengths)) {
             $this->newLine();
             $this->components->info('Project Strengths:');
             $this->components->bulletList($strengths);
         }
 
-        if (!empty($suggestions)) {
+        if (! empty($suggestions)) {
             $this->newLine();
             $this->components->info('Suggestions for Improvement:');
             $this->components->bulletList($suggestions);
@@ -541,7 +550,7 @@ class LaravelArchitectCommand extends Command
 
         // Check composer.json for security-related packages
         $composer = json_decode(File::get($path . '/composer.json'), true);
-        if (!isset($composer['require']['illuminate/encryption'])) {
+        if (! isset($composer['require']['illuminate/encryption'])) {
             $issues[] = 'Encryption package not found in dependencies';
         }
 

@@ -7,13 +7,9 @@ use Illuminate\Support\Str;
 
 trait AnalyzesTests
 {
-    /**
-     * @param string $directory
-     * @return int
-     */
     public function countTestsInDirectory(string $directory): int
     {
-        if (!File::exists($directory)) {
+        if (! File::exists($directory)) {
             return 0;
         }
 
@@ -23,6 +19,7 @@ trait AnalyzesTests
                 $count++;
             }
         }
+
         return $count;
     }
 
@@ -40,5 +37,4 @@ trait AnalyzesTests
 
         return 'Not identified';
     }
-
 }

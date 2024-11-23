@@ -2,11 +2,10 @@
 
 namespace PartridgeRocks\LaravelArchitect;
 
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
 use PartridgeRocks\LaravelArchitect\Concerns\AnalyzesTests;
 
-class LaravelArchitect {
+class LaravelArchitect
+{
     use AnalyzesTests;
 
 }

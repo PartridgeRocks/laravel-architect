@@ -13,5 +13,4 @@ class ProjectMetaDataService
     {
         return app()->version();
     }
-
 }
