@@ -197,7 +197,7 @@ class LaravelArchitectCommand extends Command
             'Total Tests'     => $this->countTests($path),
             'Feature Tests'   => $this->architect->countTestsInDirectory($path . '/tests/Feature'),
             'Unit Tests'      => $this->architect->countTestsInDirectory($path . '/tests/Unit'),
-            'Test Suite'      => $this->identifyTestFramework($path),
+            'Test Suite'      => $this->architect->identifyTestFramework($path),
             'Code Style'      => $this->identifyCodeStyle($path),
             'Static Analysis' => $this->hasStaticAnalysis($path) ? 'Configured ✅' : 'Not configured',
         ];
