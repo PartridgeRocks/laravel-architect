@@ -2,4 +2,10 @@
 
 namespace PartridgeRocks\LaravelArchitect;
 
-class LaravelArchitect {}
+use PartridgeRocks\LaravelArchitect\Concerns\AnalyzesTests;
+
+class LaravelArchitect
+{
+    use AnalyzesTests;
+
+}
