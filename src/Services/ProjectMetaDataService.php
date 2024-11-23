@@ -19,10 +19,10 @@ class ProjectMetaDataService
     public function isLaravelProject(string $path): bool
     {
         $conditions = [
-            'artisan_exists'  => File::exists($path . '/artisan'),
-            'composer_exists' => File::exists($path . '/composer.json'),
+            'artisan_exists' => File::exists($path.'/artisan'),
+            'composer_exists' => File::exists($path.'/composer.json'),
         ];
 
-        return collect($conditions)->every(fn($condition) => $condition);
+        return collect($conditions)->every(fn ($condition) => $condition);
     }
 }
