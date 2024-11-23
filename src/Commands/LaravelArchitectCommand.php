@@ -55,7 +55,7 @@ class LaravelArchitectCommand extends Command
         info("Analyzing Laravel project at: $path");
         if (!$this->isLaravelProject($path)) {
             $this->error("❌ This doesn't seem to be a Laravel project!");
-            return self::FAILURE;
+                return self::FAILURE;
         }
 
         $this->newLine();

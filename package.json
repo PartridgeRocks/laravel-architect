@@ -1,5 +1,8 @@
 {
   "devDependencies": {
     "lint-staged": "^15.2.10"
+  },
+  "dependencies": {
+    "husky": "^9.1.7"
   }
 }
