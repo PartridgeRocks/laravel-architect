@@ -25,7 +25,7 @@ trait AnalyzesTests
 
     public function identifyTestFramework(string $path): string
     {
-        $composer = json_decode(File::get($path.'/composer.json'), true);
+        $composer = json_decode(File::get($path . '/composer.json'), true);
 
         if (isset($composer['require-dev']['pestphp/pest'])) {
             return 'Pest 🐝';
