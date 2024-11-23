@@ -8,9 +8,12 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Dotenv\Dotenv;
 use PartridgeRocks\LaravelArchitect\LaravelArchitect;
+use PartridgeRocks\LaravelArchitect\Services\ProjectMetaDataService;
 use RuntimeException;
 use SplFileObject;
 use Symfony\Component\Finder\Finder;
+
+use function Laravel\Prompts\{info, select, text};
 
 class LaravelArchitectCommand extends Command
 {
@@ -37,7 +40,10 @@ class LaravelArchitectCommand extends Command
         'CARD_API_KEY',
     ];
 
-    public function __construct(private readonly LaravelArchitect $architect)
+    public function __construct(
+        private readonly LaravelArchitect $architect,
+        ProjectMetaDataService            $projectMetaDataService,
+    )
     {
         parent::__construct();
     }
@@ -46,6 +52,7 @@ class LaravelArchitectCommand extends Command
     {
         $path = $this->argument('path') ?? getcwd();
 
+        info("Analyzing Laravel project at: $path");
         if (!$this->isLaravelProject($path)) {
             $this->error("❌ This doesn't seem to be a Laravel project!");
             return self::FAILURE;
@@ -403,8 +410,6 @@ class LaravelArchitectCommand extends Command
     {
         return $this->architect->countTestsInDirectory($path . '/tests');
     }
-
-
 
 
     private function identifyCodeStyle(string $path): string
